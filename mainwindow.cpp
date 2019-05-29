@@ -8,6 +8,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     setWindowTitle("Calculadora");
 
+    //Establecer el mismo metodo (ranura o slot) para los botones 0-9
     connect(ui->btn0,SIGNAL(released()),this,SLOT(digit_pressed()));
     connect(ui->btn1,SIGNAL(released()),this,SLOT(digit_pressed()));
     connect(ui->btn2,SIGNAL(released()),this,SLOT(digit_pressed()));
@@ -19,14 +20,14 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->btn8,SIGNAL(released()),this,SLOT(digit_pressed()));
     connect(ui->btn9,SIGNAL(released()),this,SLOT(digit_pressed()));
 
-    connect(ui->btnPlusMinus,SIGNAL(released()),this,SLOT(unary_operation_pressed()));
-    connect(ui->btnPercentage,SIGNAL(released()),this,SLOT(unary_operation_pressed()));
-
+    //Establecer el mismo metodo (ranura o slot) para los botones de operación (+-x/)
     connect(ui->btnMore,SIGNAL(released()),this,SLOT(binary_operation_pressed()));
     connect(ui->btnLess,SIGNAL(released()),this,SLOT(binary_operation_pressed()));
     connect(ui->btnMultiply,SIGNAL(released()),this,SLOT(binary_operation_pressed()));
     connect(ui->btnDivide,SIGNAL(released()),this,SLOT(binary_operation_pressed()));
 
+
+    //Esta propiedad (setCheckable) permite que los botones sean verificables
     ui->btnMore->setCheckable(true);
     ui->btnLess->setCheckable(true);
     ui->btnMultiply->setCheckable(true);
@@ -42,24 +43,30 @@ MainWindow::~MainWindow()
 //Un numero es presionado
 void MainWindow::digit_pressed()
 {
+    //Aqui se construye el objeto button del boton presionado (0-9)
     QPushButton * button = (QPushButton*)sender();
 
     double lblNumber;
     QString lblNew;
 
+    //NUMERO A MOSTRAR EN PANTALLA:
+
+    //Si es el primer digito presionado
     if(
         (ui->btnMore->isChecked() ||
         ui->btnLess->isChecked() ||
         ui->btnMultiply->isChecked() ||
         ui->btnDivide->isChecked())
         && (!typingSecondNumber))
-    {
+    {        
         lblNumber = button->text().toDouble();
         typingSecondNumber = true;
         lblNew = QString::number(lblNumber,'g',15);
     }
+    //Si hay más de un digito siempre entra aqui
     else
     {
+        //Si se esta escribiendo un número decimal
         if(
             ui->lblResult->text().contains('.')
             && button->text() == "0")
@@ -74,61 +81,41 @@ void MainWindow::digit_pressed()
         }
     }
 
+    //Mostrar número escrito
     ui ->lblResult->setText(lblNew);
 }
 
+
+//Agregar punto decimal
 void MainWindow::on_btnPoint_released()
 {
+    //Valida que solo se use un punto
     if (!(ui->lblResult->text().contains('.')))
     {
         ui->lblResult->setText(ui->lblResult->text() + ".");
     }
 }
 
-void MainWindow::unary_operation_pressed()
+
+//Guardar operacion a ejecutar y guardar primer número
+void MainWindow::binary_operation_pressed()
 {
-    QPushButton * button = (QPushButton*) sender();
-    double lblNumber;
-    QString lblNew;
-
-    if(button->text() == "+/-")
-    {
-        lblNumber = ui->lblResult->text().toDouble();
-        lblNumber = lblNumber * -1;
-        lblNew = QString::number(lblNumber,'g',15);
-        ui->lblResult->setText(lblNew);
-    }
-
-    if(button->text() == "%")
-    {
-        lblNumber = ui->lblResult->text().toDouble();
-        lblNumber = lblNumber * 0.01;
-        lblNew = QString::number(lblNumber,'g',15);
-        ui->lblResult->setText(lblNew);
-    }
+    //Aqui se construye el objeto button del boton presionado (+-x/)
+    QPushButton *button = (QPushButton*)sender();
+    firstNum = ui->lblResult->text().toDouble();
+    button->setChecked(true);
 }
 
-
-void MainWindow::on_btnClear_released()
-{
-    ui->btnMore->setChecked(false);
-    ui->btnLess->setChecked(false);
-    ui->btnMultiply->setChecked(false);
-    ui->btnDivide->setChecked(false);
-
-    typingSecondNumber = false;
-    ui->lblResult->setText("0");
-}
-
-
+//Igual
 void MainWindow::on_btnEquals_released()
 {
     double lblNumber, secondNum;
-    QString lblNew,n2;
-    n2 = ui->lblResult->text();
+    QString lblNew;
 
-    secondNum = n2.toDouble();
+    //Obtener segundo número
+    secondNum = ui->lblResult->text().toDouble();
 
+    //Validar si es suma
     if(ui->btnMore->isChecked())
     {
         lblNumber = firstNum + secondNum;
@@ -136,6 +123,7 @@ void MainWindow::on_btnEquals_released()
         ui->lblResult->setText(lblNew);
         ui->btnMore->setChecked(false);
     }
+    //Validar si es resta
     else if (ui->btnLess->isChecked())
     {
         lblNumber = firstNum - secondNum;
@@ -143,6 +131,7 @@ void MainWindow::on_btnEquals_released()
         ui->lblResult->setText(lblNew);
         ui->btnLess->setChecked(false);
     }
+    //Validar si es multiplicación
     else if (ui->btnMultiply->isChecked())
     {
         lblNumber = firstNum * secondNum;
@@ -151,8 +140,10 @@ void MainWindow::on_btnEquals_released()
         ui->btnMultiply->setChecked(false);
 
     }
+    //Valida si es división
     else if (ui->btnDivide->isChecked())
     {
+        //Validar división por cero
         if(secondNum == 0)
         {
             ui->lblResult->setText("Math ERROR");
@@ -164,24 +155,32 @@ void MainWindow::on_btnEquals_released()
             ui->lblResult->setText(lblNew);
             ui->btnDivide->setChecked(false);
         }
-
     }
     typingSecondNumber = false;
-
 }
 
 
-//Guardar operacion a ejecutar y primer numero
-void MainWindow::binary_operation_pressed()
+//Concatenar signo negativo
+void MainWindow::on_btnPlusMinus_clicked()
 {
-    QString n1;
-    n1 = ui->lblResult->text();
-    QPushButton *button = (QPushButton*)sender();
-    firstNum = n1.toDouble();
-    button->setChecked(true);
+    double lblNumber;
+    QString lblNew;
+
+    lblNumber = ui->lblResult->text().toDouble();
+    lblNumber = lblNumber * -1;
+    lblNew = QString::number(lblNumber,'g',15);
+    ui->lblResult->setText(lblNew);
 }
 
+//Reiniciar calculadora
+void MainWindow::on_btnClear_released()
+{
+    ui->btnMore->setChecked(false);
+    ui->btnLess->setChecked(false);
+    ui->btnMultiply->setChecked(false);
+    ui->btnDivide->setChecked(false);
 
-
-
+    typingSecondNumber = false;
+    ui->lblResult->setText("0");
+}
 
